@@ -78,8 +78,6 @@ export default {
       status: null,
       grid: null,
       matrix: null,
-      total_bombs: 0,
-      total_cells: 0,
       total_checked: 0
     }
   },
@@ -89,6 +87,16 @@ export default {
   computed: {
     is_final_cell() {
       return this.total_cells - this.total_bombs === this.total_checked
+    },
+    total_cells() {
+      return this.rows * this.cols
+    },
+    total_bombs() {
+      return this.matrix.reduce((acc, row) => {
+        return acc + row.reduce((acc, col) => {
+          return col ? acc + 1 : acc
+        }, 0)
+      }, 0)
     }
   },
   methods: {
@@ -100,8 +108,6 @@ export default {
     startNewGame() {
       this.grid = this.generateMatrix(this.rows, this.cols)
       this.matrix = this.generateBombMatrix(this.difficulty)
-      this.total_bombs = this.getTotalBombs()
-      this.total_cells = this.getTotalCells()
       this.total_checked = 0
       this.status = PLAYING
     },
@@ -114,25 +120,12 @@ export default {
         })
       })
     },
-    getTotalBombs() {
-      return this.matrix.reduce((acc, row) => {
-        return acc + row.reduce((acc, col) => {
-          return col ? acc + 1 : acc
-        }, 0)
-      }, 0)
-    },
-    getTotalCells() {
-      return this.rows * this.cols
-    },
     generateMatrix(rows, cols) {
-      const matrix = []
-      for (let i = 0; i < rows; i++) {
-        matrix.push([])
-        for (let j = 0; j < cols; j++) {
-          matrix[i].push('_')
-        }
-      }
-      return matrix
+      return [
+        ...new Array(+rows).fill([
+          ...new Array(+cols).fill('_')
+        ])
+      ]
     },
     generateBombMatrix(difficulty) {
       const dec = difficulty / 10
