@@ -53,7 +53,9 @@
     <div v-if="status && status.includes('you')">
       <button @click="startNewGame">Start Over</button>
     </div>
-    <!-- <pre>{{this.grid}}</pre> -->
+    <div v-if="status === 'playing'">
+      <button @click="reset">Stop</button>
+    </div>
   </div>
 </template>
 
@@ -61,6 +63,10 @@
 
 <script>
 import Cell from '@/components/Cell'
+
+const PLAYING = 'playing'
+const LOSE = 'you lose'
+const WIN = 'you win'
 
 export default {
   name: 'game',
@@ -77,19 +83,32 @@ export default {
       total_checked: 0
     }
   },
+  mounted() {
+    window.reveal = this.revealRemainingBombs
+  },
+  computed: {
+    is_final_cell() {
+      return this.total_cells - this.total_bombs === this.total_checked
+    }
+  },
   methods: {
+    reset() {
+      this.status = null
+      this.grid = null
+      this.matrix = null
+    },
     startNewGame() {
       this.grid = this.generateMatrix(this.rows, this.cols)
       this.matrix = this.generateBombMatrix(this.difficulty)
       this.total_bombs = this.getTotalBombs()
       this.total_cells = this.getTotalCells()
       this.total_checked = 0
-      this.status = 'playing'
+      this.status = PLAYING
     },
     revealRemainingBombs() {
-      this.grid = this.grid.map(row => {
-        return row.map(col => {
-          return col === '_'
+      this.grid = this.grid.map((row, row_index) => {
+        return row.map((col, col_index) => {
+          return this.matrix[row_index][col_index]
             ? 'X'
             : col
         })
@@ -119,11 +138,7 @@ export default {
       const dec = difficulty / 10
       const matrix = this.grid.map(row => {
         return row.map(item => {
-          item = 0
-          if (Math.round(Math.random() <= dec)) {
-            item = 1
-          }
-          return item
+          return Math.round(Math.random() <= dec) ? 1 : 0
         })
       })
       return matrix
@@ -135,25 +150,20 @@ export default {
       this.$set(this.grid, row, current_row)
     },
     checkCell({ row, col }) {
-      if (this.status === 'lose') return
-      const selectedRow = this.matrix[row]
-      const selectedSpot = selectedRow[col]
-      if (selectedSpot) {
-        this.setCell(row, col, 'X')
-        this.status = 'you lose'
+      if (this.status === LOSE) return
+      const cell = this.getCell(row, col)
+      this.setCell(row, col, cell.new_value)
+      if (cell.bomb) {
+        this.status = LOSE
         return this
       }
-      // spot clicked
-      const count = this.lookAround(row, col, selectedSpot)
-      this.setCell(row, col, count)
-      if (this.total_cells - this.total_bombs === this.total_checked) {
-        this.status = 'you win'
+      if (this.is_final_cell) {
+        this.status = WIN
         this.revealRemainingBombs()
         return this
       }
-      if (!count) {
-        const surroundings = this.getSurroundings(row, col)
-        surroundings.map(point => {
+      if (!cell.new_value) {
+        cell.surrounding_coords.map(point => {
           if (this.grid[point[0]][point[1]] === '_') {
             this.checkCell({ row: point[0], col: point[1] })
           }
@@ -161,8 +171,20 @@ export default {
       }
       return this
     },
-    getSurroundings(row, col) {
-      let surroundings = [
+    getCell(row, col) {
+      const bomb = this.matrix[row][col]
+      const surrounding_coords = this.getSurroundingCoords(row, col)
+      const new_value = bomb
+        ? 'X'
+        : this.getSurroundingsCount(surrounding_coords)
+      return {
+        bomb,
+        surrounding_coords,
+        new_value
+      }
+    },
+    getSurroundingCoords(row, col) {
+      const surroundings = [
         [row - 1, col - 1],
         [row - 1, col],
         [row - 1, col + 1],
@@ -171,18 +193,16 @@ export default {
         [row + 1, col],
         [row + 1, col - 1],
         [row, col - 1]
-      ]
-      surroundings = surroundings.filter(item => {
-        return item[0] >= 0
-          && item[1] >= 0
+      ].filter(item => {
+        return item[0] > -1
+          && item[1] > -1
           && item[0] < this.matrix.length
           && item[1] < this.matrix[0].length
       })
       return surroundings
     },
-    lookAround(row, col, value) {
-      const surroundings = this.getSurroundings(row, col)
-      const bombsCount = surroundings.reduce((acc, item) => {
+    getSurroundingsCount(coords) {
+      const bombsCount = coords.reduce((acc, item) => {
         const spot = this.matrix[item[0]][item[1]]
         return acc + spot
       }, 0)
@@ -196,6 +216,13 @@ export default {
 </script>
 
 <style lang="scss">
+.main {
+  font-family: 'Avenir', Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-align: center;
+  color: #2c3e50;
+}
 pre {
   width: 200px;
   font-family: 'Courier New', Courier, monospace;
