@@ -68,6 +68,9 @@ const PLAYING = 'playing'
 const LOSE = 'you lose'
 const WIN = 'you win'
 
+const GRID_EMPTY = '_'
+const GRID_BOMB = 'X'
+
 export default {
   name: 'game',
   data() {
@@ -115,7 +118,7 @@ export default {
       this.grid = this.grid.map((row, row_index) => {
         return row.map((col, col_index) => {
           return this.matrix[row_index][col_index]
-            ? 'X'
+            ? GRID_BOMB
             : col
         })
       })
@@ -123,7 +126,7 @@ export default {
     generateMatrix(rows, cols) {
       return [
         ...new Array(+rows).fill([
-          ...new Array(+cols).fill('_')
+          ...new Array(+cols).fill(GRID_EMPTY)
         ])
       ]
     },
@@ -145,6 +148,8 @@ export default {
     checkCell({ row, col }) {
       if (this.status === LOSE) return
       const cell = this.getCell(row, col)
+      console.log(cell)
+      if (cell.current_value !== GRID_EMPTY) return
       this.setCell(row, col, cell.new_value)
       if (cell.bomb) {
         this.status = LOSE
@@ -157,7 +162,7 @@ export default {
       }
       if (!cell.new_value) {
         cell.surrounding_coords.map(point => {
-          if (this.grid[point[0]][point[1]] === '_') {
+          if (this.grid[point[0]][point[1]] === GRID_EMPTY) {
             this.checkCell({ row: point[0], col: point[1] })
           }
         })
@@ -166,13 +171,15 @@ export default {
     },
     getCell(row, col) {
       const bomb = this.matrix[row][col]
+      const current_value = this.grid[row][col]
       const surrounding_coords = this.getSurroundingCoords(row, col)
       const new_value = bomb
-        ? 'X'
+        ? GRID_BOMB
         : this.getSurroundingsCount(surrounding_coords)
       return {
         bomb,
         surrounding_coords,
+        current_value,
         new_value
       }
     },
