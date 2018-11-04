@@ -191,13 +191,14 @@ export default {
         [+1, -1],
         [+0, -1],
         [-1, -1]
-      ]
-      .map(tuple => [tuple[0] + row, tuple[1] + col])
-      .filter(item => item[0] > -1
-        && item[1] > -1
-        && item[0] < this.matrix.length
-        && item[1] < this.matrix[0].length
-      )
+      ].map(tuple => {
+        return [tuple[0] + row, tuple[1] + col]
+      }).filter(item => {
+        return item[0] > -1
+          && item[1] > -1
+          && item[0] < this.matrix.length
+          && item[1] < this.matrix[0].length
+      })
       return surroundings
     },
     getSurroundingsCount(coords) {
