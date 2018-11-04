@@ -146,10 +146,8 @@ export default {
       this.$set(this.grid, row, current_row)
     },
     checkCell({ row, col }) {
-      if (this.status === LOSE) return
       const cell = this.getCell(row, col)
-      console.log(cell)
-      if (cell.current_value !== GRID_EMPTY) return
+      if (this.status === LOSE || cell.current_value !== GRID_EMPTY) return
       this.setCell(row, col, cell.new_value)
       if (cell.bomb) {
         this.status = LOSE
