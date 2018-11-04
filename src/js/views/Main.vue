@@ -183,20 +183,21 @@ export default {
     },
     getSurroundingCoords(row, col) {
       const surroundings = [
-        [row - 1, col - 1],
-        [row - 1, col],
-        [row - 1, col + 1],
-        [row, col + 1],
-        [row + 1, col + 1],
-        [row + 1, col],
-        [row + 1, col - 1],
-        [row, col - 1]
-      ].filter(item => {
-        return item[0] > -1
-          && item[1] > -1
-          && item[0] < this.matrix.length
-          && item[1] < this.matrix[0].length
-      })
+        [-1, +0],
+        [-1, +1],
+        [-0, +1],
+        [+1, +1],
+        [+1, +0],
+        [+1, -1],
+        [+0, -1],
+        [-1, -1]
+      ]
+      .map(tuple => [tuple[0] + row, tuple[1] + col])
+      .filter(item => item[0] > -1
+        && item[1] > -1
+        && item[0] < this.matrix.length
+        && item[1] < this.matrix[0].length
+      )
       return surroundings
     },
     getSurroundingsCount(coords) {
